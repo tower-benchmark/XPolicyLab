@@ -24,7 +24,7 @@ Alternatively, from this policy directory:
 
 ```bash
 bash setup_eval_policy_server.sh TOWER task checkpoint_run nero_dual eef_delta \
-  42 0 /path/to/python 19000 localhost
+  42 0 /path/to/policy-env 19000 localhost
 ```
 
 `ckpt_name` follows the shared checkpoint resolver. `package_path` is an explicit
@@ -77,3 +77,28 @@ source is external and hash-verified; no internal deployment locations are
 embedded here. Full GPU parity must be established in TOWER before claiming
 comparability. No new grasp generation, IK bounds, observation tolerances or
 hardware protection changes are made by this adapter.
+
+## Evaluation script entry points
+
+The three standard wrappers keep the upstream positional argument convention.
+The policy environment argument accepts a conda name, a conda/uv environment
+prefix (containing `bin/python`), or a Python executable. The environment-side
+wrapper uses the upstream benchmark client and its conda environment convention.
+The benchmark must supply the Nero encoder observation/controller contract above;
+the generic TOWER CPU backend is only a protocol smoke fixture, not that client.
+
+```bash
+# Same machine: bench task checkpoint embodiment mode seed policyGPU envGPU policyEnv envEnv
+bash eval.sh TOWER task checkpoint_run nero_dual eef_delta 42 0 0 /path/to/policy-env benchmark-env
+# Split machine: bench task checkpoint embodiment mode seed envGPU envEnv info port host
+bash setup_eval_env_client.sh TOWER task checkpoint_run nero_dual eef_delta 42 0 benchmark-env \
+  'ckpt_name=checkpoint_run,action_type=eef_delta' 19000 localhost
+```
+
+Set `EVAL_ENV_TYPE=sim` for a benchmark-provided simulator client. The upstream
+`debug` client must likewise be configured to supply the TOWER state fields; its
+generic joint-only fixture is insufficient. `eval.sh` waits for server readiness
+and stops/reaps its owned policy server when the client exits. Provision the
+checkpoint receipt through `ckpt_name` or `deploy.yml`; these scripts do not fetch
+weights or change inference configuration. This remains an eval-only integration;
+training release timing and checkpoint distribution are owner decisions.
