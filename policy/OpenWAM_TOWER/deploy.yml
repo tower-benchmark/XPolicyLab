@@ -1,0 +1,16 @@
+policy_name: OpenWAM_TOWER
+protocol: ws
+host: localhost
+port: null
+bench_name: TOWER
+task_name: null
+ckpt_name: null
+env_cfg_type: nero_dual
+seed: 42
+action_type: eef_delta
+gpu_id: null
+eval_batch: false
+# File containing the verified receipt, or directory containing package.json.
+# Checkpoint and exact training-source locations are supplied by this receipt.
+package_path: null
+device: cuda:0

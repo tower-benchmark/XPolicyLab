@@ -1,0 +1,19 @@
+config:
+  robot: nero_dual
+  sim: tower
+embodiment:
+  arm_order: [left, back]
+  xpolicylab_arm_names: [left, right]
+  cameras: [right_front_camera, left_back_camera, left_wrist_camera, back_wrist_camera]
+  color: {shape: [H, W, 3], dtype: uint8, channels: RGB}
+  joint_encoder: {shape: [2, 7], units: rad}
+  eef_encoder: {shape: [2, 4, 4], meaning: TCP_transform}
+  gripper_width_m: {shape: [2], units: m, meaning: full_aperture}
+  instruction: {type: string}
+  coordinate_frame: encoder_arm_base
+  action_types: [joint_absolute, eef_delta]
+  eef_delta: {translation: chunk_anchor_plus_delta, rotation: delta_times_anchor}
+  control_hz: 10
+  horizon: 32
+  execute_steps: 16
+  j8: hold_fixed
