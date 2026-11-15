@@ -501,7 +501,10 @@ class PolicyServer:
             else:
                 result = await self._call_model_method(method, obs)
         except Exception as exc:
-            raise WsError(ErrorCode.CALL_FAILED, str(exc)) from exc
+            raise WsError(
+                ErrorCode.CALL_FAILED, str(exc),
+                details={"exception_type": type(exc).__name__},
+            ) from exc
 
         payload = _ok_payload(result)
         payload["latency_ms"] = (time.perf_counter() - start) * 1000.0
@@ -561,7 +564,10 @@ class PolicyServer:
                         )
                     result = await self._invoke_method(infer, observation)
         except Exception as exc:
-            raise WsError(ErrorCode.INFER_FAILED, str(exc)) from exc
+            raise WsError(
+                ErrorCode.INFER_FAILED, str(exc),
+                details={"exception_type": type(exc).__name__},
+            ) from exc
 
         latency_ms = (time.perf_counter() - start) * 1000.0
         if isinstance(result, Mapping) and "actions" in result:
