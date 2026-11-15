@@ -24,7 +24,7 @@ class Model:
 class ErrorTypes(unittest.IsolatedAsyncioTestCase):
     async def test_call_details_reach_synchronous_client(self):
         model = Model()
-        server = PolicyServer(model, PolicyServerConfig(host='localhost', port=0))
+        server = PolicyServer(model, PolicyServerConfig(host='127.0.0.1', port=0))
         await server.start()
 
         def exercise():
