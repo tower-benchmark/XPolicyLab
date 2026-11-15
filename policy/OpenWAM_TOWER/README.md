@@ -29,7 +29,8 @@ aggregate rates are comparable.
 Supply the **exact training source snapshot supplied with the checkpoint** via
 the package receipt; the adapter verifies and imports that snapshot directly.
 The current upstream OpenWAM tree is not a substitute. The lock includes its
-serving dependencies; no separate training-package installation is needed.
+serving dependencies, including pandas and pyarrow imported by its normalizer;
+no separate training-package installation is needed.
 Do not install the snapshot's broad training requirements over this environment,
 as that can replace the pinned numerical stack.
 
