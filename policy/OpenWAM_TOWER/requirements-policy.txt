@@ -1,4 +1,5 @@
-# OpenWAM_TOWER serving environment: CPython 3.12, Linux x86_64.
+# OpenWAM_TOWER serving environment: CPython 3.12, validated on Linux x86_64.
+# Hashes include every published file for each pinned version.
 # Exact reference versions, including snapshot imports and transitive dependencies.
 # SHA-256 hashes from the public package indexes.
 --index-url https://pypi.org/simple

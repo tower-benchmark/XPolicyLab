@@ -6,12 +6,11 @@ included or downloaded. Training and data conversion are outside this adapter.
 
 ## Installation and deployment
 
-Use Linux x86_64 and Python 3.12 (reference interpreter: 3.12.3). From the
-XPolicyLab checkout, with `uv` installed, create an isolated environment and
-install the pinned serving stack:
+Use Linux x86_64 and Python 3.12.3. From the XPolicyLab checkout, with `uv`
+installed, create an isolated environment and install the pinned serving stack:
 
 ```bash
-uv venv --python python3.12 --seed .venv-policy
+uv venv --python 3.12.3 --seed .venv-policy
 source .venv-policy/bin/activate
 python -m pip install --require-hashes -r policy/OpenWAM_TOWER/requirements-policy.txt
 python -m pip check
@@ -22,9 +21,16 @@ CUDA 13.0 wheel index, with Triton 3.6.0, transport and training-source serving
 dependencies. It requires an NVIDIA GPU with bf16 support and an
 [NVIDIA R580 or newer driver](https://docs.nvidia.com/deploy/cuda-compatibility/minor-version-compatibility.html)
 (CUDA 13.x minimum driver family). Inference uses bf16 and native torch SDPA.
-Reference scores were produced on a different accelerator with this torch
-version, so per-scene outcomes may differ between hardware stacks and only
-aggregate rates are comparable.
+
+The lock already covers XPolicyLab's transport dependencies; the server runs
+from the checkout. Do not run the top-level `pip install -e .` in this
+environment: it can upgrade NumPy and OpenCV past the pinned versions.
+
+The 45k qualification ran on torch 2.7.1+cu128. The reference evaluation used
+torch 2.11.0 on different accelerator hardware; this lock is the closest public
+CUDA equivalent, not a bit-exact reproduction of its numerics. Per-scene outcomes
+can differ between hardware stacks, so compare aggregate success rates with their
+confidence intervals.
 
 Supply the **exact training source snapshot supplied with the checkpoint** via
 the package receipt; the adapter verifies and imports that snapshot directly.
