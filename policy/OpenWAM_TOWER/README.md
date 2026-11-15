@@ -6,10 +6,33 @@ included or downloaded. Training and data conversion are outside this adapter.
 
 ## Installation and deployment
 
-Install XPolicyLab's transport dependencies in the policy environment. Install
-the dependencies of the **exact training source snapshot supplied with the
-checkpoint**; the current upstream OpenWAM tree is not a substitute. The 45k
-qualification uses Python 3.12.3, torch 2.7.1+cu128, bf16 and native torch SDPA.
+Use Linux x86_64 and Python 3.12 (reference interpreter: 3.12.3). From the
+XPolicyLab checkout, with `uv` installed, create an isolated environment and
+install the pinned serving stack:
+
+```bash
+uv venv --python python3.12 --seed .venv-policy
+source .venv-policy/bin/activate
+python -m pip install --require-hashes -r policy/OpenWAM_TOWER/requirements-policy.txt
+python -m pip check
+```
+
+The lock pins torch 2.11.0+cu130 and torchvision 0.26.0+cu130 from the official
+CUDA 13.0 wheel index, with Triton 3.6.0, transport and training-source serving
+dependencies. It requires an NVIDIA GPU with bf16 support and an
+[NVIDIA R580 or newer driver](https://docs.nvidia.com/deploy/cuda-compatibility/minor-version-compatibility.html)
+(CUDA 13.x minimum driver family). Inference uses bf16 and native torch SDPA.
+Reference scores were produced on a different accelerator with this torch
+version, so per-scene outcomes may differ between hardware stacks and only
+aggregate rates are comparable.
+
+Supply the **exact training source snapshot supplied with the checkpoint** via
+the package receipt; the adapter verifies and imports that snapshot directly.
+The current upstream OpenWAM tree is not a substitute. The lock includes its
+serving dependencies; no separate training-package installation is needed.
+Do not install the snapshot's broad training requirements over this environment,
+as that can replace the pinned numerical stack.
+
 Copy `embodiments/nero_dual/env_cfg/` into the parent benchmark's `env_cfg/`
 (merge the robot registry if one exists). Both runtime and training dimension
 registries then declare two seven-joint arms and two one-dimensional grippers.
