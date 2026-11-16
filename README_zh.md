@@ -156,7 +156,7 @@ policy/<POLICY>/
 | `reset()`                             | 在评测 episode 之间清空模型侧状态。无参数 —— 需要首帧观测的策略应先 `reset()`，再正常 `update_obs`。 |
 
 
-策略 server 默认只接受原始 RGB `uint8` `HxWx3` 颜色数组，其它值会在到达模型前被拒绝。客户端应使用 `XPolicyLab.utils.process_data.decode_image_bit` 解码存储的 XPL 图像。发送编码图像的客户端可在 `deploy.yml` 中设置 `raw_rgb_images_only: false`，恢复原有服务端解码行为；其中标准的无标记 JPEG/PNG 仍按 legacy 格式读取。OpenWAM_TOWER 拒绝此选项。默认还会拒绝 1.0.2 曾直接传递的非 `uint8` `HxWx3` 颜色数组（float、CHW、RGBA、灰度）、堆叠的 `colors` 和值为 `None` 的颜色字段；客户端应先转换（例如 `np.ascontiguousarray(img[..., :3]).astype(np.uint8)` 或 `transpose(1, 2, 0)`），或关闭此校验。
+策略 server 默认只接受原始 RGB `uint8` `HxWx3` 颜色数组，其它值会在到达模型前被拒绝。客户端应使用 `XPolicyLab.utils.process_data.decode_image_bit` 解码存储的 XPL 图像。发送编码图像的客户端可在 `deploy.yml` 中设置 `raw_rgb_images_only: false`，恢复原有服务端解码行为；其中标准的无标记 JPEG/PNG 仍按 legacy 格式读取。OpenWAM_TOWER 拒绝此选项。默认还会拒绝旧版本曾直接传递的非 `uint8` `HxWx3` 颜色数组（float、CHW、RGBA、灰度）、堆叠的 `colors` 和值为 `None` 的颜色字段；客户端应先转换（例如 `np.ascontiguousarray(img[..., :3]).astype(np.uint8)` 或 `transpose(1, 2, 0)`），或关闭此校验。
 
 默认策略 server 协议是 websocket（`deploy.yml` 中 `protocol: ws`）；`legacy_tcp` 仅留给尚未迁移的 adapter。传输层替你处理重连、重试、keepalive 与模型加载冷启动 —— 正常 adapter 不必碰它。
 
@@ -344,7 +344,7 @@ XPolicyLab 标准化 adapter、转换器与环境 client 之间传递的观测�
 | **standard** | `encode_image_bit`：先转 BGR，并在 JPEG `COM` 段写入载荷 `XPL-RGB1` | 颜色正确                                          |
 
 
-策略 server 默认只接受原始 RGB `uint8` `HxWx3` 颜色数组，其它值会在到达模型前被拒绝。客户端应使用 `XPolicyLab.utils.process_data.decode_image_bit` 解码存储的 XPL 图像。发送编码图像的客户端可在 `deploy.yml` 中设置 `raw_rgb_images_only: false`，恢复原有服务端解码行为；其中标准的无标记 JPEG/PNG 仍按 legacy 格式读取。OpenWAM_TOWER 拒绝此选项。默认还会拒绝 1.0.2 曾直接传递的非 `uint8` `HxWx3` 颜色数组（float、CHW、RGBA、灰度）、堆叠的 `colors` 和值为 `None` 的颜色字段；客户端应先转换（例如 `np.ascontiguousarray(img[..., :3]).astype(np.uint8)` 或 `transpose(1, 2, 0)`），或关闭此校验。
+策略 server 默认只接受原始 RGB `uint8` `HxWx3` 颜色数组，其它值会在到达模型前被拒绝。客户端应使用 `XPolicyLab.utils.process_data.decode_image_bit` 解码存储的 XPL 图像。发送编码图像的客户端可在 `deploy.yml` 中设置 `raw_rgb_images_only: false`，恢复原有服务端解码行为；其中标准的无标记 JPEG/PNG 仍按 legacy 格式读取。OpenWAM_TOWER 拒绝此选项。默认还会拒绝旧版本曾直接传递的非 `uint8` `HxWx3` 颜色数组（float、CHW、RGBA、灰度）、堆叠的 `colors` 和值为 `None` 的颜色字段；客户端应先转换（例如 `np.ascontiguousarray(img[..., :3]).astype(np.uint8)` 或 `transpose(1, 2, 0)`），或关闭此校验。
 
 Legacy 数据永不迁移 —— JPEG 无法无损换通道 —— 因此两种格式会长期共存，甚至出现在同一次训练中。标记写在 buffer 内而非文件属性上，使单个 buffer 自描述；`COM` 是标准段，所有解码器都会跳过，只占 12 字节且不破坏兼容。若必须在无 OpenCV 时读取这些 buffer：PIL 会把标记暴露为 `Image.open(...).info["comment"]`，检查是否为 `b"XPL-RGB1"`，缺失时自行反转通道。不能跳过检查 —— 只在新数据上测过的 PIL loader 看起来完美，却会悄悄毁掉旧 episode。
 
