@@ -155,7 +155,7 @@ export EVAL_ENV_TYPE=debug
 bash eval.sh RoboDojo stack_bowls <ckpt_name> arx_x5 joint 0 0 0 <policy_env> base
 ```
 
-The run must reach `[MAIN] eval finished` with no tracebacks. The debug client sends plain image arrays by default; re-run with `DEBUG_OBS_ENCODED=1` to make it send encoded camera colors instead — a JPEG buffer, raw bytes, and a plain array across the three cameras — which exercises client-side encode/decode round trips and still sends raw RGB arrays. For a quick smoke test, `policy/demo_policy` accepts placeholder env names such as `base`.
+The run must reach `[MAIN] eval finished` with no tracebacks. The debug client sends plain image arrays by default; re-run with `DEBUG_OBS_ENCODED=1` to exercise client-side encode/decode round trips using bytes and uint8 buffers; the client still sends raw RGB arrays to the server. For a quick smoke test, `policy/demo_policy` accepts placeholder env names such as `base`.
 
 **3. Simulator evaluation** — recommended for every PR and required before a leaderboard entry is published: run the same `eval.sh` with `EVAL_ENV_TYPE=sim` (or unset) inside a RoboDojo / RoboTwin workspace and record task success rates.
 
