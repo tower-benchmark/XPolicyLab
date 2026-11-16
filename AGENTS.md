@@ -17,7 +17,7 @@ The rules below apply to every change in this repo. Their rationale is in CONTRI
 
 ## Images are RGB from end to end
 
-`decode_image_bit` and `decode_obs_images` return RGB, and the policy server hands `update_obs` /
+`decode_image_bit` and `decode_obs_images` return RGB for supported stored formats; the policy server validates raw RGB by default and hands `update_obs` /
 `update_obs_batch` RGB. Treat this as settled, and note that it holds for a reason no caller can
 reproduce: stored image bits come in **two byte formats**, and `decode_image_bit` reads a marker
 inside each buffer to tell them apart and swap only where a swap is owed.
@@ -43,11 +43,8 @@ No channel conversion belongs in conversion, training, or eval code. Two excepti
 
 ## Decoding goes through the shared helpers
 
-`model.py` never decodes. The server decodes every observation it forwards, including for custom
-RPCs, so `obs["vision"][<camera>]["color"]` is already an array; adapters only reshape, cast, resize.
-A policy may instead declare `raw_rgb_images_only = "<PolicyName>"` (see `policy/OpenWAM_TOWER`);
-both servers then reject any colour field that is not a raw RGB `uint8` `HxWx3` array, before
-decoding, and its clients must decode with `decode_image_bit` themselves.
+By default, policy servers accept only raw RGB `uint8` `HxWx3` colour arrays and reject other values before the model sees them. Decode stored XPL images on the client with `XPolicyLab.utils.process_data.decode_image_bit`. Clients that send encoded images can set `raw_rgb_images_only: false` in `deploy.yml` to restore legacy server decoding, including its caveat that standard unmarked JPEG/PNG is read as the legacy format; OpenWAM_TOWER refuses this opt-out.
+`model.py` receives arrays and must not decode top-level colour fields.
 
 Offline code — conversion scripts and training dataloaders — decodes **only** with
 `decode_image_bit` from `XPolicyLab.utils.process_data`, and encodes **only** with its inverse

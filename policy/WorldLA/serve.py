@@ -32,7 +32,9 @@ def main():
     from client_server.ws.model_server import PolicyServer, PolicyServerConfig
 
     server = PolicyServer(
-        model, PolicyServerConfig(host=cfg["host"], port=int(cfg["port"]))
+        model, PolicyServerConfig(host=cfg["host"], port=int(cfg["port"]),
+                                  raw_rgb_images_only=cfg.get("raw_rgb_images_only", True),
+                                  policy_name=cfg.get("policy_name", "WorldLA"))
     )
     print(f"[WorldLA] official ws transport at {server.url}", flush=True)
     try:

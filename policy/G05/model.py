@@ -540,7 +540,7 @@ def _call_accepts_history_buffers(fn) -> bool:
 def _as_chw_uint8(value) -> np.ndarray:
     # Load-bearing exception to "model.py never decodes": history frames that
     # deploy.py nests under G05_HISTORY_OBSERVATIONS_KEY reach the model still
-    # encoded, because the server's decode_obs_images only walks the top-level
+    # encoded, because both server admission and decode_obs_images only walk top-level
     # obs["vision"]. decode_image_bit returns already-decoded arrays unchanged,
     # so the unconditional call covers bytes and 1-D uint8 buffers alike; an
     # isinstance(np.ndarray) guard would skip encoded buffers that arrive as

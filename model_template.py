@@ -21,9 +21,6 @@ class ModelTemplate:
       `self.model` 可以是神经网络、规划器，或者任意策略对象。
     """
 
-    # Set to the policy name to reject encoded colour fields at the server boundary.
-    raw_rgb_images_only = False
-
     RED = "\033[31m"
     RESET = "\033[0m"
 

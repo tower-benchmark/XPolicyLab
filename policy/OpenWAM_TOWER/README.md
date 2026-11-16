@@ -9,7 +9,8 @@ arrays of shape `HxWx3` in colour fields and rejects anything else, including
 encoded images, with an `invalid_frame` error that names the camera and field.
 Decode a stored XPL image on the client with `decode_image_bit` from
 `XPolicyLab.utils.process_data` before sending it: a stored buffer may be in the
-legacy byte format, which any other decoder reverses.
+legacy byte format, which any other decoder reverses. The server guard defaults
+to on for every policy; OpenWAM_TOWER refuses `raw_rgb_images_only: false`.
 
 ## Installation and deployment
 

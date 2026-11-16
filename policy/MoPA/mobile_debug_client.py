@@ -9,7 +9,7 @@ import time
 import numpy as np
 
 from client_server.ws import WsModelClient
-from XPolicyLab.utils.process_data import encode_image_bit
+from XPolicyLab.utils.process_data import decode_image_bit, encode_image_bit
 
 from mopa.data import mobile
 
@@ -47,7 +47,7 @@ class SyntheticMobile:
         vision = {}
         for camera in CAMERAS:
             image = self.rng.integers(0, 256, (224, 224, 3), dtype=np.uint8)
-            vision[camera] = {"color": encode_image_bit(image) if self.encoded else image}
+            vision[camera] = {"color": decode_image_bit(encode_image_bit(image)) if self.encoded else image}
         return {
             "vision": vision,
             "state": _state(self.t + env_idx * 1000),
@@ -111,7 +111,7 @@ def main() -> None:
     parser.add_argument("--episode-step-limit", type=int, default=32)
     parser.add_argument("--episodes", type=int, default=1)
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--encoded", action="store_true", help="send marked RGB JPEG buffers")
+    parser.add_argument("--encoded", action="store_true", help="round-trip marked JPEG on the client, then send raw RGB")
     parser.add_argument("--action-key-style", choices=("singular", "plural"), default="singular")
     args = parser.parse_args()
 

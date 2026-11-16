@@ -68,7 +68,7 @@ Two entry points share the name `get_action_dim`, and they do **not** read the s
 
 Two more shared entry points, so adapters do not re-derive them: the importable root in `policy/<POLICY>/model.py` is the parent of this checkout, `Path(__file__).resolve().parent.parents[2]` (equivalently `Path(__file__).resolve().parents[3]`; counted from the policy directory, `parents[1]` or `parents[3]` is a bug), and checkpoint directories resolve through `XPolicyLab.utils.checkpoint_resolver` (`resolve_checkpoint_root`, or `build_run_dir_name` / `candidate_checkpoint_roots` when the adapter adds its own naming layer).
 
-`model.py` never decodes images. The policy server decodes every observation it forwards, so `obs["vision"][<camera>]["color"]` is always a plain image array. This holds for `update_obs` / `update_obs_batch` and for any custom RPC a policy exposes that carries an observation, so an adapter with its own deploy loop still must not decode.
+By default, policy servers accept only raw RGB `uint8` `HxWx3` colour arrays and reject other values before the model sees them. Decode stored XPL images on the client with `XPolicyLab.utils.process_data.decode_image_bit`. Clients that send encoded images can set `raw_rgb_images_only: false` in `deploy.yml` to restore legacy server decoding, including its caveat that standard unmarked JPEG/PNG is read as the legacy format; OpenWAM_TOWER refuses this opt-out. `model.py` never decodes top-level colour fields.
 
 In offline code — conversion scripts and training dataloaders that read trajectory files — **only `decode_image_bit` from `XPolicyLab.utils.process_data` is supported**, and image bits that get written back out must come from its inverse, `encode_image_bit`. Never hand-roll `cv2.imdecode` / `np.frombuffer` / PIL decoding, and never write stored buffers with a bare `cv2.imencode`. The README states the rule in [Standard Data Formats](README.md#decode-only-through-decode_image_bit).
 
@@ -88,6 +88,7 @@ No channel conversion belongs in conversion, training, or eval code; only `utils
 ```yaml
 policy_name: demo_policy
 protocol: ws
+raw_rgb_images_only: true
 host: localhost
 port: null
 bench_name: null
@@ -100,7 +101,7 @@ gpu_id: null
 eval_batch: false
 ```
 
-All of these are required except `ckpt_name` and `gpu_id`, which the setup scripts supply per run. Keep a key even when a script already defaults it, and document model-specific extra keys in the policy README.
+`raw_rgb_images_only` is optional, defaults to true, and accepts only a YAML boolean (not a string, integer or null). All other keys are required except `ckpt_name` and `gpu_id`, which the setup scripts supply per run. Keep a key even when a script already defaults it, and document model-specific extra keys in the policy README.
 
 ### Scripts
 
@@ -154,7 +155,7 @@ export EVAL_ENV_TYPE=debug
 bash eval.sh RoboDojo stack_bowls <ckpt_name> arx_x5 joint 0 0 0 <policy_env> base
 ```
 
-The run must reach `[MAIN] eval finished` with no tracebacks. The debug client sends plain image arrays by default; re-run with `DEBUG_OBS_ENCODED=1` to make it send encoded camera colors instead — a JPEG buffer, raw bytes, and a plain array across the three cameras — which exercises the server-side decode path that real environment clients rely on. For a quick smoke test, `policy/demo_policy` accepts placeholder env names such as `base`.
+The run must reach `[MAIN] eval finished` with no tracebacks. The debug client sends plain image arrays by default; re-run with `DEBUG_OBS_ENCODED=1` to make it send encoded camera colors instead — a JPEG buffer, raw bytes, and a plain array across the three cameras — which exercises client-side encode/decode round trips and still sends raw RGB arrays. For a quick smoke test, `policy/demo_policy` accepts placeholder env names such as `base`.
 
 **3. Simulator evaluation** — recommended for every PR and required before a leaderboard entry is published: run the same `eval.sh` with `EVAL_ENV_TYPE=sim` (or unset) inside a RoboDojo / RoboTwin workspace and record task success rates.
 

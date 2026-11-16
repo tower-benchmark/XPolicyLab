@@ -1,4 +1,5 @@
 """Raw-only admission across both server transports, without policy weights."""
+from copy import deepcopy
 import asyncio
 import io
 import socket
@@ -8,16 +9,16 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from client_server.ws.model_server import PolicyServer
+from client_server.ws.model_server import PolicyServer, PolicyServerConfig
 from client_server.ws.protocol.messages import MessageType
 from client_server.ws.protocol.schemas import Frame
 from client_server.tcp.model_server import ModelServer
 from client_server.tcp.utils import numpy_to_json, json_to_numpy
-from XPolicyLab.utils.process_data import decode_image_bit, encode_image_bit, prepare_obs_images
+from XPolicyLab.utils.process_data import decode_obs_images, decode_image_bit, encode_image_bit, prepare_obs_images
 from XPolicyLab.policy.OpenWAM_TOWER.model import Model as TowerModel
 
 RGB = np.full((8, 9, 3), [201, 35, 9], dtype=np.uint8)
-MESSAGE = 'OpenWAM_TOWER accepts raw RGB uint8 HxWx3 arrays only; decode on the client with XPolicyLab.utils.process_data.decode_image_bit'
+MESSAGE = 'Policy server accepts raw RGB uint8 HxWx3 arrays only; decode on the client with XPolicyLab.utils.process_data.decode_image_bit'
 
 
 def encoded(kind):
@@ -40,14 +41,14 @@ class DefaultModel:
 
 
 class RawModel(DefaultModel):
-    raw_rgb_images_only = 'OpenWAM_TOWER'
+    pass
 
 
 def observation(value):
     return {'vision': {'front': {'color': value}}}
 
 
-def request(model, transport, path, value):
+def request(model, transport, path, value, **config):
     obs = observation(value)
     if path == 'update_obs_batch':
         obs = [obs]
@@ -55,8 +56,8 @@ def request(model, transport, path, value):
         frame = Frame(message_type=MessageType.INFER if path == 'INFER' else MessageType.CALL,
                       request_id='raw', evaluation_id='test',
                       payload={'observation': obs} if path == 'INFER' else {'func_name': path, 'obs': obs})
-        return asyncio.run(PolicyServer(model).process_frame(frame)).payload
-    server = ModelServer(model)
+        return asyncio.run(PolicyServer(model, PolicyServerConfig(**config)).process_frame(frame)).payload
+    server = ModelServer(model, **config)
     server.running = True
     client, peer = socket.socketpair()
     client.settimeout(5)
@@ -105,10 +106,10 @@ def test_encoded_rejected(transport, path, kind, container):
 @pytest.mark.parametrize('kind', ['PNG', 'JPEG', 'marked', 'raw'])
 def test_default_unchanged_and_raw_accepted(transport, path, kind):
     value = RGB.copy() if kind == 'raw' else encoded(kind)
-    expected = decode_image_bit(value)
+    expected = decode_obs_images(deepcopy(observation(value)))["vision"]["front"]["color"]
     models = [DefaultModel(), RawModel()] if kind == 'raw' else [DefaultModel()]
     for model in models:
-        response = request(model, transport, path, value)
+        response = request(model, transport, path, value, **({"raw_rgb_images_only": False} if kind != "raw" else {}))
         assert 'error' not in response and 'code' not in response
         obs = model.obs[0] if path == 'update_obs_batch' else model.obs
         np.testing.assert_array_equal(obs['vision']['front']['color'], expected)
@@ -117,10 +118,9 @@ def test_default_unchanged_and_raw_accepted(transport, path, kind):
 
 
 def test_tower_declaration_and_atomic_batch_validation():
-    assert TowerModel.raw_rgb_images_only == 'OpenWAM_TOWER'
     first = observation(RGB)
     with pytest.raises(ValueError, match=MESSAGE):
-        prepare_obs_images([first, observation(np.array(encoded('PNG')))], RawModel())
+        prepare_obs_images([first, observation(np.array(encoded('PNG')))])
     assert first['vision']['front']['color'] is RGB
 
 
@@ -130,19 +130,19 @@ def test_all_colour_layouts(field, container):
     value = container(bytes(encoded('PNG')))
     obs = {'vision': {'front': {field: value} if field else value}}
     with pytest.raises(ValueError, match='vision.front.' + (field or 'color')):
-        prepare_obs_images(obs, RawModel())
+        prepare_obs_images(obs)
 
 
 @pytest.mark.parametrize('shape', [(8, 9, 4), (8, 9, 1), (8, 9), (1, 8, 9, 3)])
 def test_non_rgb_arrays_rejected(shape):
     with pytest.raises(ValueError, match=MESSAGE):
-        prepare_obs_images(observation(np.zeros(shape, np.uint8)), RawModel())
+        prepare_obs_images(observation(np.zeros(shape, np.uint8)))
     with pytest.raises(ValueError, match=MESSAGE):
-        prepare_obs_images(observation(np.zeros((8, 9, 3), np.float32)), RawModel())
+        prepare_obs_images(observation(np.zeros((8, 9, 3), np.float32)))
 
 
 def test_raw_infer_result_identical():
-    before = request(DefaultModel(), 'ws', 'INFER', RGB.copy())
+    before = request(DefaultModel(), 'ws', 'INFER', RGB.copy(), raw_rgb_images_only=False)
     after = request(RawModel(), 'ws', 'INFER', RGB.copy())
     before.pop('latency_ms', None)
     after.pop('latency_ms', None)

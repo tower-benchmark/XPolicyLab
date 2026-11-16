@@ -6,17 +6,17 @@ import numpy as np
 
 from XPolicyLab.model_template import ModelTemplate
 from XPolicyLab.utils.checkpoint_resolver import resolve_checkpoint_root
-from XPolicyLab.utils.process_data import get_robot_action_dim_info
+from XPolicyLab.utils.process_data import get_robot_action_dim_info, validate_raw_rgb_images_only
 
 from .adapter import CAMERAS, V3OpenWAMPolicy, finite, validate_anchor
 
 
 class Model(ModelTemplate):
-    raw_rgb_images_only = "OpenWAM_TOWER"
-
     def __init__(self, model_cfg):
         super().__init__()
         self.model_cfg = dict(model_cfg)
+        if not validate_raw_rgb_images_only(model_cfg.get("raw_rgb_images_only", True)):
+            raise ValueError("OpenWAM_TOWER refuses raw_rgb_images_only: false")
         if model_cfg.get("protocol", "ws") != "ws":
             raise ValueError("OpenWAM_TOWER is served over the ws protocol only")
         if model_cfg.get("env_cfg_type") != "nero_dual":

@@ -12,7 +12,7 @@ if str(_XPOLICYLAB_ROOT) not in sys.path:
 import numpy as np
 
 from client_server.tcp.model_client import ModelClient
-from XPolicyLab.utils.process_data import encode_image_bit, get_robot_action_dim_info
+from XPolicyLab.utils.process_data import decode_image_bit, encode_image_bit, get_robot_action_dim_info
 
 Batch_Size = 10
 
@@ -152,12 +152,12 @@ class TestEnv:
 
     @staticmethod
     def _encode_obs_colors(obs):
-        """Send encoded colors so the server-side decode path gets exercised."""
+        """Exercise stored-image round trips, sending raw RGB to the server."""
         for index, camera in enumerate(obs["vision"].values()):
             encoded = encode_image_bit(camera["color"])
-            # Alternate container types so both server-side decode branches
+            # Alternate container types so both client-side decode branches
             # (raw bytes and 1-D uint8 buffer) stay covered.
-            camera["color"] = (
+            camera["color"] = decode_image_bit(
                 encoded if index % 2 else np.frombuffer(encoded, np.uint8)
             )
 
@@ -342,7 +342,7 @@ if __name__ == "__main__":
     parser.add_argument("--eval_episode_num", type=int, default=10, help="number of evaluation episodes")
     parser.add_argument("--eval_batch", type=str2bool, default=False, help="whether to run batch evaluation")
     parser.add_argument("--obs_encoded", type=str2bool, default=os.environ.get("DEBUG_OBS_ENCODED", "0"),
-                        help="send encoded camera colors to exercise the server-side decode path")
+                        help="round-trip encoded camera colors on the client, then send raw RGB")
 
     args_cli = parser.parse_args()
     deploy_cfg = vars(args_cli)

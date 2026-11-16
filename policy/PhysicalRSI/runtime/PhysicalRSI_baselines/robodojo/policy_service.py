@@ -185,7 +185,9 @@ async def worker(spec, root):
 
                 return call
 
-        server = PolicyServer(Gate(), PolicyServerConfig(host="127.0.0.1", port=0))
+        server = PolicyServer(Gate(), PolicyServerConfig(host="127.0.0.1", port=0,
+            raw_rgb_images_only=spec["config"].get("raw_rgb_images_only", True),
+            policy_name=spec["config"].get("policy_name")))
         await server.start()
         atomic_json(
             root / "ready.json",

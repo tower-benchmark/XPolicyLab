@@ -23,7 +23,7 @@ from client_server.ws.protocol.exceptions import ErrorCode, WsError
 from client_server.ws.protocol.keepalive import normalize_ws_ping
 from client_server.ws.protocol.messages import MessageType
 from client_server.ws.protocol.schemas import Frame
-from XPolicyLab.utils.process_data import prepare_obs_images
+from XPolicyLab.utils.process_data import prepare_obs_images, validate_raw_rgb_images_only
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +57,11 @@ class PolicyServerConfig:
     port: int = 19000
     ws_ping_interval_s: float | None = 20.0
     ws_ping_timeout_s: float | None = 20.0
+    raw_rgb_images_only: bool = True
+    policy_name: str | None = None
 
     def __post_init__(self) -> None:
+        validate_raw_rgb_images_only(self.raw_rgb_images_only)
         self.ws_ping_interval_s = normalize_ws_ping(
             self.ws_ping_interval_s, field_name="ws_ping_interval_s"
         )
@@ -490,7 +493,7 @@ class PolicyServer:
                 # cameras); run it off the event loop for the same reason
                 # compression is disabled — a blocked loop delays keepalive
                 # pongs and every other connection.
-                obs = await asyncio.to_thread(prepare_obs_images, obs, self.model)
+                obs = await asyncio.to_thread(prepare_obs_images, obs, self.config.raw_rgb_images_only, self.config.policy_name)
             except ValueError as exc:
                 raise WsError(ErrorCode.INVALID_FRAME, str(exc)) from exc
 
@@ -517,7 +520,7 @@ class PolicyServer:
 
         try:
             # Off the event loop: see _handle_call — JPEG decode is CPU-bound.
-            observation = await asyncio.to_thread(prepare_obs_images, observation, self.model)
+            observation = await asyncio.to_thread(prepare_obs_images, observation, self.config.raw_rgb_images_only, self.config.policy_name)
         except ValueError as exc:
             raise WsError(ErrorCode.INVALID_FRAME, str(exc)) from exc
 
@@ -611,6 +614,7 @@ def main() -> None:
     if args.relay_url is not None:
         deploy_cfg["relay_url"] = args.relay_url
 
+    raw_rgb_images_only = validate_raw_rgb_images_only(deploy_cfg.get("raw_rgb_images_only", True))
     policy_name = deploy_cfg.get("policy_name")
     if not policy_name:
         raise ValueError("policy_name must be specified in config")
@@ -624,6 +628,8 @@ def main() -> None:
     server = PolicyServer(
         model,
         PolicyServerConfig(
+            raw_rgb_images_only=raw_rgb_images_only,
+            policy_name=policy_name,
             host=deploy_cfg.get("host") or "0.0.0.0",
             port=int(port) if port is not None else 19000,
             ws_ping_interval_s=deploy_cfg.get("ws_ping_interval_s", 20.0),
