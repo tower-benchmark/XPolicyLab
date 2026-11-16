@@ -23,7 +23,7 @@ from client_server.ws.protocol.exceptions import ErrorCode, WsError
 from client_server.ws.protocol.keepalive import normalize_ws_ping
 from client_server.ws.protocol.messages import MessageType
 from client_server.ws.protocol.schemas import Frame
-from XPolicyLab.utils.process_data import decode_obs_images
+from XPolicyLab.utils.process_data import prepare_obs_images
 
 logger = logging.getLogger(__name__)
 
@@ -490,7 +490,7 @@ class PolicyServer:
                 # cameras); run it off the event loop for the same reason
                 # compression is disabled — a blocked loop delays keepalive
                 # pongs and every other connection.
-                obs = await asyncio.to_thread(decode_obs_images, obs)
+                obs = await asyncio.to_thread(prepare_obs_images, obs, self.model)
             except ValueError as exc:
                 raise WsError(ErrorCode.INVALID_FRAME, str(exc)) from exc
 
@@ -517,7 +517,7 @@ class PolicyServer:
 
         try:
             # Off the event loop: see _handle_call — JPEG decode is CPU-bound.
-            observation = await asyncio.to_thread(decode_obs_images, observation)
+            observation = await asyncio.to_thread(prepare_obs_images, observation, self.model)
         except ValueError as exc:
             raise WsError(ErrorCode.INVALID_FRAME, str(exc)) from exc
 

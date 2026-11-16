@@ -41,6 +41,11 @@ No channel conversion belongs in conversion, training, or eval code. Two excepti
 - A deliberate RGB→BGR conversion for a checkpoint trained on BGR data, opt-in through a documented
   `deploy.yml` key that defaults to RGB (see `input_color_order` in `policy/Dexora_1B`).
 
+OpenWAM_TOWER accepts only raw RGB `uint8` arrays of shape `HxWx3` in colour fields;
+decode standard encoded images to RGB on the client before sending them. It declares
+`raw_rgb_images_only = "OpenWAM_TOWER"`, which makes both servers reject encoded
+colour payloads before decoding; other policies retain the legacy decoder by default.
+
 ## Decoding goes through the shared helpers
 
 `model.py` never decodes. The server decodes every observation it forwards, including for custom

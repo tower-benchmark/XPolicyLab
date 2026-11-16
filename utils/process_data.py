@@ -550,6 +550,35 @@ def _decode_obs_image(value, camera_name, image_key):
         ) from exc
 
 
+def prepare_obs_images(obs, model):
+    """Enforce an opt-in raw colour contract before any legacy decoding."""
+    contract = getattr(model, "raw_rgb_images_only", False)
+    if contract:
+        _validate_raw_obs_images(obs, contract)
+    return decode_obs_images(obs)
+
+
+def _validate_raw_obs_images(obs, policy_name):
+    if isinstance(obs, (list, tuple)):
+        for single_obs in obs:
+            _validate_raw_obs_images(single_obs, policy_name)
+        return
+    if not isinstance(obs, dict) or not isinstance(obs.get("vision"), dict):
+        return
+    for camera_name, camera in obs["vision"].items():
+        if isinstance(camera, dict):
+            fields = ((key, camera[key]) for key in OBS_IMAGE_KEYS if key in camera)
+        else:
+            fields = (("color", camera),)
+        for field, value in fields:
+            if not (isinstance(value, np.ndarray) and value.dtype == np.uint8
+                    and value.ndim == 3 and value.shape[-1] == 3):
+                raise ValueError(
+                    f"vision.{camera_name}.{field}: {policy_name} accepts raw RGB uint8 "
+                    "HxWx3 arrays only; decode encoded images to RGB on the client"
+                )
+
+
 def decode_obs_images(obs):
     """
     Decode the encoded color streams of a runtime observation, in place.

@@ -12,6 +12,8 @@ from .adapter import CAMERAS, V3OpenWAMPolicy, finite, validate_anchor
 
 
 class Model(ModelTemplate):
+    raw_rgb_images_only = "OpenWAM_TOWER"
+
     def __init__(self, model_cfg):
         super().__init__()
         self.model_cfg = dict(model_cfg)
