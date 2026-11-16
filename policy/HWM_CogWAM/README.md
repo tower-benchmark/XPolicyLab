@@ -205,8 +205,8 @@ Two backbones are referenced by the checkpoint rather than bundled with it:
 - **The vendored `CogWAM/` differs from the upstream tree in exactly two
   places**, both recorded here so the diff is auditable:
   1. `cogwam/eval/robodojo_policy.py` — `_decode_image` no longer decodes
-     encoded image buffers. The XPolicyLab policy server decodes every
-     observation before forwarding it, so the branch was unreachable in this
+     encoded image buffers. Images arrive as raw RGB arrays (server-decoded only under
+     `raw_rgb_images_only: false`), so the branch was unreachable in this
      deployment, and a hand-rolled decode plus `COLOR_BGR2RGB` is wrong for one
      of the two stored byte formats (AGENTS.md, "Decoding goes through the
      shared helpers"). Shape/dtype normalization — CHW→HWC, grayscale→RGB,

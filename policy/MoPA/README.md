@@ -93,7 +93,7 @@ EVAL_ENV_TYPE=sim bash eval.sh "$BENCH_NAME" "$TASK_NAME" mobile_run m92uw joint
 
 The standard launcher uses the workspace environment client. Set
 `EVAL_ENV_TYPE=debug` for its interface check and `DEBUG_OBS_ENCODED=1` to exercise
-server image decoding where supported. The server supplies RGB arrays to the
+client-side image encode/decode round trips. Raw RGB arrays are sent to the
 model. Batched observations/actions are associated using `env_idx`.
 
 The additional mobile debug launcher uses synthetic observations and checks the

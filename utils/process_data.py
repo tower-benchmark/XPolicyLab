@@ -553,7 +553,11 @@ def _decode_obs_image(value, camera_name, image_key):
 def validate_raw_rgb_images_only(value):
     """Do not coerce YAML strings, integers or null into a transport contract."""
     if type(value) is not bool:
-        raise ValueError("raw_rgb_images_only must be a bool (true or false)")
+        raise ValueError(
+            "raw_rgb_images_only must be a bool (true or false); "
+            f"got {value!r} ({type(value).__name__}). "
+            "Use a YAML boolean in deploy.yml; with --overrides, pass True or False."
+        )
     return value
 
 
@@ -574,8 +578,10 @@ def _validate_raw_obs_images(obs, policy_name):
     for camera_name, camera in obs["vision"].items():
         if isinstance(camera, dict):
             fields = ((key, camera[key]) for key in OBS_IMAGE_KEYS if key in camera)
-        else:
+        elif isinstance(camera, _DECODABLE_TYPES):
             fields = (("color", camera),)
+        else:
+            continue
         for field, value in fields:
             if not (isinstance(value, np.ndarray) and value.dtype == np.uint8
                     and value.ndim == 3 and value.shape[-1] == 3):
@@ -583,8 +589,7 @@ def _validate_raw_obs_images(obs, policy_name):
                     f"vision.{camera_name}.{field}: {policy_name} accepts raw RGB uint8 "
                     "HxWx3 arrays only; decode on the client with "
                     "XPolicyLab.utils.process_data.decode_image_bit; deployments with encoded "
-                    "image clients may set raw_rgb_images_only: false in deploy.yml "
-                    "(OpenWAM_TOWER refuses this opt-out)"
+                    "image clients may set raw_rgb_images_only: false in deploy.yml"
                 )
 
 

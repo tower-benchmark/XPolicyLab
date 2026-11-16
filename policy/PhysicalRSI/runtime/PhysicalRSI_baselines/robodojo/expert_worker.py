@@ -15,6 +15,8 @@ from .expert_service import verify_spec
 
 async def serve(spec, ready_path):
     identity = verify_spec(spec)
+    from XPolicyLab.utils.process_data import validate_raw_rgb_images_only
+    raw_rgb_images_only = validate_raw_rgb_images_only(spec["deploy"].get("raw_rgb_images_only", True))
     module, _, factory_name = spec["entrypoint"].partition(":")
     factory = getattr(importlib.import_module(module), factory_name)
     source = Path(inspect.getsourcefile(factory)).resolve()
@@ -40,7 +42,7 @@ async def serve(spec, ready_path):
 
     server = PolicyServer(
         IdentifiedModel(), PolicyServerConfig(host="127.0.0.1", port=0,
-            raw_rgb_images_only=spec["deploy"].get("raw_rgb_images_only", True),
+            raw_rgb_images_only=raw_rgb_images_only,
             policy_name=spec["deploy"].get("policy_name"))
     )
     await server.start()

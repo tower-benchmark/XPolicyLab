@@ -128,6 +128,8 @@ class PolicyService:
 
 async def worker(spec, root):
     identity = verify(spec)
+    from XPolicyLab.utils.process_data import validate_raw_rgb_images_only
+    raw_rgb_images_only = validate_raw_rgb_images_only(spec["config"].get("raw_rgb_images_only", True))
     from client_server.ws.model_server import PolicyServer, PolicyServerConfig
     import client_server.ws.model_server as transport
 
@@ -186,7 +188,7 @@ async def worker(spec, root):
                 return call
 
         server = PolicyServer(Gate(), PolicyServerConfig(host="127.0.0.1", port=0,
-            raw_rgb_images_only=spec["config"].get("raw_rgb_images_only", True),
+            raw_rgb_images_only=raw_rgb_images_only,
             policy_name=spec["config"].get("policy_name")))
         await server.start()
         atomic_json(

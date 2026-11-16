@@ -117,11 +117,10 @@ def test_default_unchanged_and_raw_accepted(transport, path, kind):
             assert obs['vision']['front']['color'] is value
 
 
-def test_tower_declaration_and_atomic_batch_validation():
+def test_atomic_batch_validation():
     first = observation(RGB)
     with pytest.raises(ValueError, match=MESSAGE):
         prepare_obs_images([first, observation(np.array(encoded('PNG')))])
-    assert first['vision']['front']['color'] is RGB
 
 
 @pytest.mark.parametrize('field', ['color', 'colors', 'rgb', 'image', None])
@@ -133,12 +132,10 @@ def test_all_colour_layouts(field, container):
         prepare_obs_images(obs)
 
 
-@pytest.mark.parametrize('shape', [(8, 9, 4), (8, 9, 1), (8, 9), (1, 8, 9, 3)])
-def test_non_rgb_arrays_rejected(shape):
+@pytest.mark.parametrize('shape,dtype', [((8, 9, 4), np.uint8), ((8, 9, 1), np.uint8), ((8, 9), np.uint8), ((1, 8, 9, 3), np.uint8), ((3, 8, 9), np.uint8), ((8, 9, 3), np.float32)])
+def test_non_rgb_arrays_rejected(shape, dtype):
     with pytest.raises(ValueError, match=MESSAGE):
-        prepare_obs_images(observation(np.zeros(shape, np.uint8)))
-    with pytest.raises(ValueError, match=MESSAGE):
-        prepare_obs_images(observation(np.zeros((8, 9, 3), np.float32)))
+        prepare_obs_images(observation(np.zeros(shape, dtype)))
 
 
 def test_raw_infer_result_identical():
@@ -182,3 +179,32 @@ def test_ws_wire_contract(kind):
         finally:
             await server.stop()
     asyncio.run(exercise())
+
+
+def test_ws_batch_rejects_before_model_call():
+    model = DefaultModel()
+    response = asyncio.run(PolicyServer(model).process_frame(Frame(
+        message_type=MessageType.CALL, request_id='batch', evaluation_id='test',
+        payload={'func_name': 'update_obs_batch', 'obs': [observation(RGB), observation(encoded('PNG'))]},
+    )))
+    assert response.payload['code'] == 'invalid_frame'
+    assert not hasattr(model, 'obs')
+
+
+def test_non_image_vision_metadata_passes():
+    obs = dict(observation(RGB))
+    obs['vision']['timestamp'] = 1.5
+    assert prepare_obs_images(obs) is obs
+    assert obs['vision']['timestamp'] == 1.5
+
+
+@pytest.mark.parametrize('value', [None, np.zeros((2, 8, 9, 3), np.uint8)])
+def test_none_and_stacked_colours_rejected(value):
+    with pytest.raises(ValueError, match='vision.front.colors'):
+        prepare_obs_images({'vision': {'front': {'colors': value}}})
+
+
+def test_legacy_opt_out_png_channel_order():
+    model = DefaultModel()
+    request(model, 'ws', 'INFER', encoded('PNG'), raw_rgb_images_only=False)
+    np.testing.assert_array_equal(model.obs['vision']['front']['color'][0, 0], [9, 35, 201])

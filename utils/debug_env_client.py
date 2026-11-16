@@ -146,12 +146,12 @@ class TestEnv:
             state[f"{prefix}delta_ee_pose"] = np.zeros(7, dtype=np.float32)
 
         if self.obs_encoded:
-            self._encode_obs_colors(demo_obs)
+            self._roundtrip_obs_colors(demo_obs)
 
         return demo_obs
 
     @staticmethod
-    def _encode_obs_colors(obs):
+    def _roundtrip_obs_colors(obs):
         """Exercise stored-image round trips, sending raw RGB to the server."""
         for index, camera in enumerate(obs["vision"].values()):
             encoded = encode_image_bit(camera["color"])

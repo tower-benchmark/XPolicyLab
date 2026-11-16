@@ -99,3 +99,11 @@ def test_policy_name_and_opt_out_in_error():
     assert 'ExamplePolicy accepts raw RGB uint8 HxWx3 arrays only' in str(error.value)
     assert 'raw_rgb_images_only: false in deploy.yml' in str(error.value)
     assert 'XPolicyLab.utils.process_data.decode_image_bit' in str(error.value)
+
+@pytest.mark.parametrize('value', ['false', 0, None])
+def test_bool_error_reports_value_type_and_cli_hint(value):
+    with pytest.raises(ValueError) as error:
+        PolicyServerConfig(raw_rgb_images_only=value)
+    message = str(error.value)
+    assert f'got {value!r} ({type(value).__name__})' in message
+    assert 'deploy.yml' in message and '--overrides' in message and 'False' in message

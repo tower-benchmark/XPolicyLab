@@ -95,17 +95,13 @@ def _resolve_robot_action_dim_info(env_cfg_type: str) -> dict:
 
 
 def _normalize_image(image: Any) -> np.ndarray:
-    """One DECODED camera frame -> HWC uint8 RGB.
+    """Normalize a decoded camera frame to HWC uint8 RGB.
 
-    The XPolicyLab policy server validates raw RGB arrays by default, or
-    decodes with ``decode_obs_images`` when explicitly opted out (call and
-    infer payloads, including batches), so encoded bits never arrive here — a payload that bypassed
-    the server fails loudly on the rank check below rather than being decoded
-    a second time. What remains is validation plus layout/dtype normalization,
-    while the default server also checks HxWx3 uint8. Accepted arrays pass
-    through it untouched. Images are RGB from data conversion through
-    evaluation — a channel swap here would train the model on one order and
-    evaluate it on the other.
+    The server admits raw RGB arrays by default and decodes encoded images only
+    under raw_rgb_images_only: false. It does no layout/dtype normalization;
+    this function does. Arrays that are already HWC uint8 pass through untouched.
+    Encoded buffers that bypass the server fail the rank check below. Preserve
+    RGB channel order throughout conversion, training and evaluation.
     """
     image = np.asarray(image)
 

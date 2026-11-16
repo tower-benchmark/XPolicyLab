@@ -73,7 +73,7 @@ steps with 10 Euler denoising steps; the adapter returns the first 16 actions.
 - `image_size`: fixed at `[640, 480]`.
 - `execute_horizon`: fixed at `16`.
 
-Images passed to `model.py` are already decoded RGB arrays and are never
+Images passed to `model.py` are raw RGB arrays (server-decoded only under `raw_rgb_images_only: false`) and are never
 channel-swapped. State order is left arm 6, left gripper 1, right arm 6, right
 gripper 1. State uses the training q01/q99 transform with clipping to
 `[-1.0, 1.0]`; actions use its inverse. Grippers remain continuous. Relative
