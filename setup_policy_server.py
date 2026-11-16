@@ -8,6 +8,7 @@ import importlib
 import argparse
 import traceback
 from client_server.tcp.model_server import ModelServer
+from XPolicyLab.utils.process_data import validate_raw_rgb_images_only
 
 
 def _default_protocol() -> str:
@@ -26,6 +27,8 @@ def main(deploy_cfg):
     port = deploy_cfg.get("port")
     host = deploy_cfg.get("host", "0.0.0.0")
     protocol = deploy_cfg.get("protocol", "ws")
+
+    raw_rgb_images_only = validate_raw_rgb_images_only(deploy_cfg.get("raw_rgb_images_only", True))
 
     # Instantiate model
     model_class_func = eval_function_decorator(f"XPolicyLab.policy.{policy_name}.model", "Model")
@@ -60,6 +63,8 @@ def main(deploy_cfg):
         server = PolicyServer(
             model,
             PolicyServerConfig(
+                raw_rgb_images_only=raw_rgb_images_only,
+                policy_name=policy_name,
                 host=host,
                 port=int(port),
                 ws_ping_interval_s=deploy_cfg.get("ws_ping_interval_s", 20.0),
@@ -84,7 +89,7 @@ def main(deploy_cfg):
             raise
 
     # Start server in background thread
-    server = ModelServer(model, host=host, port=port)
+    server = ModelServer(model, host=host, port=port, raw_rgb_images_only=raw_rgb_images_only, policy_name=policy_name)
     thread = threading.Thread(target=run_server, daemon=True)
     thread.start()
 

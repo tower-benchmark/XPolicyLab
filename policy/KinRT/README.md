@@ -106,7 +106,7 @@ Default destination: `checkpoints/KinRT-RoboDojo-Full35-60k/`. A normal download
 | `policy_uv_env_path` | Used when eval arg 9 is `uv` |
 | `KINRT_OPENPI_ROOT` | KinRT `policy/pi05` checkout |
 
-Images stay RGB. The server decodes runtime cameras before `model.py`. Camera map: `cam_head` → `cam_high`.
+Images stay RGB. Runtime cameras arrive as raw RGB arrays (server-decoded only under `raw_rgb_images_only: false`). Camera map: `cam_head` → `cam_high`.
 
 ## Limitations
 

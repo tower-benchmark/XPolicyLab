@@ -4,10 +4,12 @@ import traceback
 from .utils import *
 import time
 
-from XPolicyLab.utils.process_data import decode_obs_images
+from XPolicyLab.utils.process_data import prepare_obs_images, validate_raw_rgb_images_only
 
 class ModelServer:
-    def __init__(self, model, host="localhost", port=None):
+    def __init__(self, model, host="localhost", port=None, *, raw_rgb_images_only=True, policy_name=None):
+        self.raw_rgb_images_only = validate_raw_rgb_images_only(raw_rgb_images_only)
+        self.policy_name = policy_name
         self.model = model
         self.host = host
         self.port = port
@@ -92,7 +94,7 @@ class ModelServer:
                     # server: custom RPCs can ship camera frames too, and
                     # decode_obs_images leaves non-observation payloads alone.
                     if obs is not None:
-                        obs = decode_obs_images(obs)
+                        obs = prepare_obs_images(obs, self.raw_rgb_images_only, self.policy_name)
 
                     # Find corresponding model method
                     method = getattr(self.model, cmd, None)

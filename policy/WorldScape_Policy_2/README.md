@@ -186,7 +186,7 @@ zeros for debug-only wiring checks, default `false`.
 Supported replan steps for horizon `24` (observation interval `3`) are
 `3, 6, 9, 12, 15, 18, 21, 24`.
 
-The adapter receives three already-decoded HWC `uint8` RGB arrays:
+The adapter receives three HWC `uint8` raw RGB arrays (server-decoded only under `raw_rgb_images_only: false`):
 `cam_head`, `cam_left_wrist`, and `cam_right_wrist`. It performs no
 OpenCV/PIL decoding and no RGB/BGR channel swap. Robot state and action
 conversion use XPolicyLab's shared helpers in the dual-arm `6+1+6+1` packing

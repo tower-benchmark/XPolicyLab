@@ -1,5 +1,6 @@
 policy_name: demo_policy
 protocol: ws
+raw_rgb_images_only: true
 host: localhost
 port: null
 bench_name: null

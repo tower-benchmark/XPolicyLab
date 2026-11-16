@@ -128,7 +128,7 @@ The debug client supports synthetic observations and `REPLAY_HDF5` recordings.
 `MOCK=true` returns hold-state actions without loading weights; it checks the
 interface, not learned policy quality. Unset `MOCK` to evaluate a checkpoint.
 For replay, `REPLAY_START`, `EVAL_EPISODE_NUM`, and `EPISODE_STEP_LIMIT` control
-the run. Encoded debug frames use the shared `encode_image_bit` helper.
+the run. Debug encoding modes round-trip through `encode_image_bit` and `decode_image_bit` on the client, then send raw RGB arrays.
 
 Normal evaluation uses the shared environment client. The client must implement
 the mobile state/action contract. Returned chunks contain singular action keys

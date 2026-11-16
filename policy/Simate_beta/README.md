@@ -116,7 +116,7 @@ To evaluate your own completed training run, replace `simate-beta-robodojo-eval`
 with its training label (for example, `mem20-ae`) or absolute run directory.
 
 Set `DEBUG_OBS_ENCODED=1` with debug mode to check encoded camera observations.
-The shared server decodes RGB images; the adapter preserves their channel order.
+Images arrive as raw RGB arrays (server-decoded only under `raw_rgb_images_only: false`); the adapter preserves their channel order.
 
 The deployment loop updates history every action step, including within a chunk.
 History is isolated per evaluation/environment and cleared between episodes.

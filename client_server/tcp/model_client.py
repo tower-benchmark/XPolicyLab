@@ -139,6 +139,8 @@ class ModelClient:
             )
             self._connect()
             return self.call(func_name=func_name, obs=obs, _reconnect_attempted=True)
+        if "error" in response:
+            raise RuntimeError(response["error"])
         if "res" in response.keys():
             return response["res"]
         return None

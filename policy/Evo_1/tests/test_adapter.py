@@ -203,7 +203,7 @@ class WebSocketTests(Fixture, unittest.IsolatedAsyncioTestCase):
     async def check_roundtrip(self, encoded):
         from client_server.ws.model_server import PolicyServer, PolicyServerConfig
         from client_server.ws.model_client import WsModelClient
-        server = PolicyServer(self.model, PolicyServerConfig(host="127.0.0.1", port=0))
+        server = PolicyServer(self.model, PolicyServerConfig(host="127.0.0.1", port=0, raw_rgb_images_only=not encoded))
         await server.start()
         client = None
         try:
@@ -232,6 +232,18 @@ class WebSocketTests(Fixture, unittest.IsolatedAsyncioTestCase):
             if client is not None:
                 await asyncio.to_thread(client.close)
             await server.stop()
+
+    async def test_default_rejects_encoded_colour(self):
+        from client_server.ws.model_server import PolicyServer
+        from client_server.ws.protocol.messages import MessageType
+        from client_server.ws.protocol.schemas import Frame
+        obs = observation()
+        obs["vision"][adapter.CAMERAS[0]]["color"] = encode_image_bit(obs["vision"][adapter.CAMERAS[0]]["color"])
+        response = await PolicyServer(self.model).process_frame(Frame(
+            message_type=MessageType.CALL, request_id="encoded", evaluation_id="test",
+            payload={"func_name": "update_obs", "obs": obs},
+        ))
+        self.assertEqual(response.payload["code"], "invalid_frame")
 
     async def test_raw_websocket(self):
         await self.check_roundtrip(False)

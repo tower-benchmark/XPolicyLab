@@ -231,7 +231,7 @@ def test_official_websocket_and_deploy_loop_with_mock_engine(policy, encoded):
             self.step += 1
 
     async def exercise():
-        server = PolicyServer(policy, PolicyServerConfig(host="127.0.0.1", port=0))
+        server = PolicyServer(policy, PolicyServerConfig(host="127.0.0.1", port=0, raw_rgb_images_only=not encoded))
         await server.start()
         port = server._server.sockets[0].getsockname()[1]
 
@@ -290,7 +290,7 @@ def test_official_batch_loop_handles_finished_environments(policy, encoded):
                 self.steps[env_id] += 1
 
     async def exercise():
-        server = PolicyServer(policy, PolicyServerConfig(host='127.0.0.1', port=0))
+        server = PolicyServer(policy, PolicyServerConfig(host='127.0.0.1', port=0, raw_rgb_images_only=not encoded))
         await server.start()
         port = server._server.sockets[0].getsockname()[1]
 
@@ -317,3 +317,17 @@ def test_official_batch_loop_handles_finished_environments(policy, encoded):
 
     asyncio.run(exercise())
     assert [len(call[0]) for call in policy.policy.batch_calls] == [2, 1]
+
+
+def test_default_server_rejects_encoded_colour(policy):
+    from client_server.ws.model_server import PolicyServer
+    from client_server.ws.protocol.messages import MessageType
+    from client_server.ws.protocol.schemas import Frame
+    obs = observation()
+    obs["vision"]["cam_head"]["color"] = encode_image_bit(obs["vision"]["cam_head"]["color"])
+    response = asyncio.run(PolicyServer(policy).process_frame(Frame(
+        message_type=MessageType.CALL, request_id="encoded", evaluation_id="test",
+        payload={"func_name": "update_obs", "obs": obs},
+    )))
+    assert response.payload["code"] == "invalid_frame"
+    assert not policy.policy.calls

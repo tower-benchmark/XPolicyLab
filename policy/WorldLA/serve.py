@@ -24,6 +24,8 @@ def main():
     root = Path(__file__).resolve().parent.parent.parent
     sys.path.insert(0, str(root.parent))
     sys.path.insert(0, str(root))
+    from XPolicyLab.utils.process_data import validate_raw_rgb_images_only
+    raw_rgb_images_only = validate_raw_rgb_images_only(cfg.get("raw_rgb_images_only", True))
     from XPolicyLab.policy.WorldLA.model import Model
 
     model = Model(cfg)
@@ -32,7 +34,9 @@ def main():
     from client_server.ws.model_server import PolicyServer, PolicyServerConfig
 
     server = PolicyServer(
-        model, PolicyServerConfig(host=cfg["host"], port=int(cfg["port"]))
+        model, PolicyServerConfig(host=cfg["host"], port=int(cfg["port"]),
+                                  raw_rgb_images_only=raw_rgb_images_only,
+                                  policy_name=cfg.get("policy_name", "WorldLA"))
     )
     print(f"[WorldLA] official ws transport at {server.url}", flush=True)
     try:

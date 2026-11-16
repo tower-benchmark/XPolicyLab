@@ -26,9 +26,9 @@ def _encode_camera(rgb: np.ndarray, raw: bytes | None, mode: str):
     if mode == "array":
         return rgb
     if mode == "jpeg_rgb":
-        return encode_image_bit(rgb)
+        return decode_image_bit(encode_image_bit(rgb))
     if mode == "raw_hdf5":
-        return raw
+        return decode_image_bit(raw)
     raise ValueError(mode)
 
 class SyntheticSource:

@@ -550,6 +550,49 @@ def _decode_obs_image(value, camera_name, image_key):
         ) from exc
 
 
+def validate_raw_rgb_images_only(value):
+    """Do not coerce YAML strings, integers or null into a transport contract."""
+    if type(value) is not bool:
+        raise ValueError(
+            "raw_rgb_images_only must be a bool (true or false); "
+            f"got {value!r} ({type(value).__name__}). "
+            "Use a YAML boolean in deploy.yml; with --overrides, pass True or False."
+        )
+    return value
+
+
+def prepare_obs_images(obs, raw_rgb_images_only=True, policy_name=None):
+    """Validate the whole batch before decoding; opt-out preserves legacy decoding."""
+    if raw_rgb_images_only:
+        _validate_raw_obs_images(obs, policy_name or "Policy server")
+    return decode_obs_images(obs)
+
+
+def _validate_raw_obs_images(obs, policy_name):
+    if isinstance(obs, (list, tuple)):
+        for single_obs in obs:
+            _validate_raw_obs_images(single_obs, policy_name)
+        return
+    if not isinstance(obs, dict) or not isinstance(obs.get("vision"), dict):
+        return
+    for camera_name, camera in obs["vision"].items():
+        if isinstance(camera, dict):
+            fields = ((key, camera[key]) for key in OBS_IMAGE_KEYS if key in camera)
+        elif isinstance(camera, _DECODABLE_TYPES):
+            fields = (("color", camera),)
+        else:
+            continue
+        for field, value in fields:
+            if not (isinstance(value, np.ndarray) and value.dtype == np.uint8
+                    and value.ndim == 3 and value.shape[-1] == 3):
+                raise ValueError(
+                    f"vision.{camera_name}.{field}: {policy_name} accepts raw RGB uint8 "
+                    "HxWx3 arrays only; decode on the client with "
+                    "XPolicyLab.utils.process_data.decode_image_bit; deployments with encoded "
+                    "image clients may set raw_rgb_images_only: false in deploy.yml"
+                )
+
+
 def decode_obs_images(obs):
     """
     Decode the encoded color streams of a runtime observation, in place.

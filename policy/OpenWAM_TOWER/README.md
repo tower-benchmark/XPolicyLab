@@ -4,6 +4,14 @@ Eval-only TOWER embodiment of OpenWAM, served through XPolicyLab's WebSocket
 server. The existing `OpenWAM` RoboDojo policy is unchanged. No checkpoint is
 included or downloaded. Training and data conversion are outside this adapter.
 
+OpenWAM_TOWER is served over the ws protocol only. It accepts only raw RGB `uint8`
+arrays of shape `HxWx3` in colour fields and rejects anything else, including
+encoded images, with an `invalid_frame` error that names the camera and field.
+Decode a stored XPL image on the client with `decode_image_bit` from
+`XPolicyLab.utils.process_data` before sending it: a stored buffer may be in the
+legacy byte format, which any other decoder reverses. The server guard defaults
+to on for every policy; OpenWAM_TOWER refuses `raw_rgb_images_only: false`.
+
 ## Installation and deployment
 
 Use Linux x86_64 and Python 3.12.3. From the XPolicyLab checkout, with `uv`

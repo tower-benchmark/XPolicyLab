@@ -80,4 +80,4 @@ The optional 11th argument `planning_gpu_ids` (comma-separated) auto-starts the 
 
 ## Deploy loop
 
-Unlike other adapters, `deploy.py` drives evaluation through the custom RPCs `begin_episode` and `step` instead of `update_obs` / `get_action`, which is what lets the MemoryBank update between single actions and lets `Mn` switch subtasks on the server. `step` returns `None` between macro chunks and right after a subtask switch; the loop simply fetches a fresh observation and calls again. As with the standard methods, the policy server decodes camera images before these calls, so `model.py` must not decode.
+Unlike other adapters, `deploy.py` drives evaluation through the custom RPCs `begin_episode` and `step` instead of `update_obs` / `get_action`, which is what lets the MemoryBank update between single actions and lets `Mn` switch subtasks on the server. `step` returns `None` between macro chunks and right after a subtask switch; the loop simply fetches a fresh observation and calls again. As with the standard methods, camera images arrive as raw RGB arrays (server-decoded only under `raw_rgb_images_only: false`), so `model.py` must not decode.
