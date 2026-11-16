@@ -17,7 +17,7 @@ from XPolicyLab.utils.process_data import decode_image_bit, encode_image_bit, pr
 from XPolicyLab.policy.OpenWAM_TOWER.model import Model as TowerModel
 
 RGB = np.full((8, 9, 3), [201, 35, 9], dtype=np.uint8)
-MESSAGE = 'OpenWAM_TOWER accepts raw RGB uint8 HxWx3 arrays only; decode encoded images to RGB on the client'
+MESSAGE = 'OpenWAM_TOWER accepts raw RGB uint8 HxWx3 arrays only; decode on the client with XPolicyLab.utils.process_data.decode_image_bit'
 
 
 def encoded(kind):
@@ -133,12 +133,26 @@ def test_all_colour_layouts(field, container):
         prepare_obs_images(obs, RawModel())
 
 
+@pytest.mark.parametrize('shape', [(8, 9, 4), (8, 9, 1), (8, 9), (1, 8, 9, 3)])
+def test_non_rgb_arrays_rejected(shape):
+    with pytest.raises(ValueError, match=MESSAGE):
+        prepare_obs_images(observation(np.zeros(shape, np.uint8)), RawModel())
+    with pytest.raises(ValueError, match=MESSAGE):
+        prepare_obs_images(observation(np.zeros((8, 9, 3), np.float32)), RawModel())
+
+
 def test_raw_infer_result_identical():
     before = request(DefaultModel(), 'ws', 'INFER', RGB.copy())
     after = request(RawModel(), 'ws', 'INFER', RGB.copy())
     before.pop('latency_ms', None)
     after.pop('latency_ms', None)
     assert numpy_to_json(before) == numpy_to_json(after)
+    np.testing.assert_array_equal(after['actions']['vision']['front']['color'], RGB)
+
+
+def test_tower_refuses_legacy_tcp():
+    with pytest.raises(ValueError, match='ws protocol only'):
+        TowerModel(dict(protocol='legacy_tcp', env_cfg_type='nero_dual', seed=42))
 
 
 @pytest.mark.parametrize('kind', ['PNG', 'JPEG', 'marked', 'raw'])

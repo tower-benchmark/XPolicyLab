@@ -551,7 +551,14 @@ def _decode_obs_image(value, camera_name, image_key):
 
 
 def prepare_obs_images(obs, model):
-    """Enforce an opt-in raw colour contract before any legacy decoding."""
+    """
+    Enforce an opt-in raw colour contract before any legacy decoding.
+
+    A model that sets `raw_rgb_images_only` to its policy name accepts only raw
+    RGB uint8 HxWx3 arrays in every colour field it is sent. Every other value
+    there, including encoded buffers, None and non-image entries, is rejected
+    before decoding. Models that leave it unset get `decode_obs_images` unchanged.
+    """
     contract = getattr(model, "raw_rgb_images_only", False)
     if contract:
         _validate_raw_obs_images(obs, contract)
@@ -575,7 +582,8 @@ def _validate_raw_obs_images(obs, policy_name):
                     and value.ndim == 3 and value.shape[-1] == 3):
                 raise ValueError(
                     f"vision.{camera_name}.{field}: {policy_name} accepts raw RGB uint8 "
-                    "HxWx3 arrays only; decode encoded images to RGB on the client"
+                    "HxWx3 arrays only; decode on the client with "
+                    "XPolicyLab.utils.process_data.decode_image_bit"
                 )
 
 

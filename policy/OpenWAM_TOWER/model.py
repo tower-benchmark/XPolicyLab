@@ -17,6 +17,8 @@ class Model(ModelTemplate):
     def __init__(self, model_cfg):
         super().__init__()
         self.model_cfg = dict(model_cfg)
+        if model_cfg.get("protocol", "ws") != "ws":
+            raise ValueError("OpenWAM_TOWER is served over the ws protocol only")
         if model_cfg.get("env_cfg_type") != "nero_dual":
             raise ValueError("OpenWAM_TOWER requires env_cfg_type=nero_dual")
         if int(model_cfg.get("seed", 42)) != 42:
