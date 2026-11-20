@@ -97,6 +97,12 @@ class Model(ModelTemplate):
             chunks.append(prediction_to_chunk(prediction))
         return chunks
 
+    def predict_with_evidence(self, observation):
+        """Return executed rows and the full horizon in one locked WS CALL."""
+        self.update_obs(observation)
+        actions = self.get_action()
+        return {"actions": actions, "prediction": self.get_prediction()}
+
     def get_prediction(self, env_idx=None):
         """Full horizon for parity/audit; never performs another inference."""
         index = next(iter(self._batch)) if env_idx is None else int(env_idx)
